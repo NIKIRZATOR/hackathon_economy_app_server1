@@ -1,0 +1,168 @@
+http://localhost/data/
+
+User
+
+1. Регистрация
+
+curl -X POST http://localhost/data/user/register \
+  -d '{ "username":"test1", "password":"qwerty", "cityTitle":"Город Капитала" }'
+
+
+Логин
+
+curl -X POST http://localhost/data/user/login \
+  -H "Content-Type: application/json" \
+  -d '{ "username":"test1", "password":"qwerty" }'
+
+
+Получить всех
+
+curl http://localhost/data/user
+
+
+Получить по id
+
+curl http://localhost/data/user/1
+
+
+Обновить
+
+curl -X PUT http://localhost/data/user/1 \
+  -d '{ "cityTitle":"Новый Город", "userLvl":2, "userXp":150 }'
+
+
+Удалить (если есть)
+
+curl -X DELETE http://localhost/data/user/1
+
+======================================================================================
+
+BuildingType (типы зданий)
+
+Все
+
+curl http://localhost/data/building-type
+
+
+По id
+
+curl http://localhost/data/building-type/3
+
+======================================================================================
+
+ResourceItem (ресурсы)
+
+Все
+
+curl http://localhost/data/resource-item
+
+
+По id
+
+curl http://localhost/data/resource-item/2
+
+======================================================================================
+
+UserResource (склад/кошелёк пользователя)
+
+Все
+
+curl http://localhost/data/user-resource
+
+
+По пользователю
+
+curl http://localhost/data/user-resource/by-user/1
+
+
+Создать
+
+curl -X POST http://localhost/data/user-resource \
+  -H "Content-Type: application/json" \
+  -d '{ "user":{"userId":1}, "resource":{"idItem":2}, "amount":100 }'
+
+
+Обновить по id записи
+
+curl -X PUT http://localhost/data/user-resource/5 \
+  -H "Content-Type: application/json" \
+  -d '{ "amount":250 }'
+
+
+Удалить по id записи
+
+curl -X DELETE http://localhost/data/user-resource/5
+
+======================================================================================
+
+UserBuilding (постройки пользователя)
+
+Все
+
+curl http://localhost/data/user-building
+
+
+По пользователю
+
+curl http://localhost/data/user-building/by-user/1
+
+
+Создать
+
+curl -X POST http://localhost/data/user-building \
+  -H "Content-Type: application/json" \
+  -d '{ 
+        "user":{"userId":1},
+        "buildingType":{"idBuilding":3},
+        "x":10, "y":6,
+        "currentLevel":1,
+        "state":"placed"
+      }'
+
+
+Обновить по id записи
+
+curl -X PUT http://localhost/data/user-building/7 \
+  -H "Content-Type: application/json" \
+  -d '{ "x":11, "y":7, "currentLevel":2, "state":"placed" }'
+
+
+Удалить по id записи
+
+curl -X DELETE http://localhost/data/user-building/7
+
+======================================================================================
+
+BuildingTypeInput (входы зданий)
+
+Все
+
+curl http://localhost/data/building-type-input
+
+
+По зданию
+
+curl http://localhost/data/building-type-input/by-building/3
+
+
+По ресурсу
+
+curl http://localhost/data/building-type-input/by-resource/2
+
+======================================================================================
+
+BuildingTypeOutput (выходы зданий)
+
+Все
+
+curl http://localhost/data/building-type-output
+
+
+По зданию
+
+curl http://localhost/data/building-type-output/by-building/3
+
+
+По ресурсу
+
+curl http://localhost/data/building-type-output/by-resource/2

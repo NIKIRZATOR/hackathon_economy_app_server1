@@ -1,4 +1,6 @@
 import 'package:conduit_core/conduit_core.dart';
+import 'package:data/models/building_type_input_model.dart';
+import 'package:data/models/building_type_output_model.dart';
 import 'package:data/models/user_building_model.dart';
 
 class BuildingTypeModel extends ManagedObject<_BuildingTypeModel>
@@ -30,4 +32,8 @@ class _BuildingTypeModel {
   String? imagePath;
 
   ManagedSet<UserBuildingModel>? userBuildings; // кто использует (UserBuildingModel)
+
+  ManagedSet<BuildingTypeInputModel>? inputs;
+  ManagedSet<BuildingTypeOutputModel>? outputs;
+
 }

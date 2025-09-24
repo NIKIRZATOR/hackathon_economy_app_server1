@@ -1,6 +1,8 @@
 import 'package:conduit_core/conduit_core.dart';
 import 'package:conduit_postgresql/conduit_postgresql.dart';
 import 'package:data/controllers/app_building_type_controller.dart';
+import 'package:data/controllers/app_building_type_input_controller.dart';
+import 'package:data/controllers/app_building_type_output_controller.dart';
 import 'package:data/controllers/app_resource_item_controller.dart';
 import 'package:data/controllers/app_user_building_controller.dart';
 import 'package:data/controllers/app_user_controller.dart';
@@ -26,7 +28,7 @@ class AppService extends ApplicationChannel {
     ..route('user/[:idUser]').link(() => AppUserController(managedContext))
 
     ..route('building-type/[:idBuilding]').link(() => AppBuildingTypeController(managedContext))
-    
+
     ..route('resource-item/[:idItem]').link(() => AppResourceItemController(managedContext))
 
     ..route('user-resource').link(() => AppUserResourceController(managedContext))
@@ -35,7 +37,16 @@ class AppService extends ApplicationChannel {
 
     ..route('user-building').link(() => AppUserBuildingController(managedContext))
     ..route('user-building/by-user/:idUser').link(() => AppUserBuildingController(managedContext))
-    ..route('user-building/:idUserBuilding').link(() => AppUserBuildingController(managedContext));
+    ..route('user-building/:idUserBuilding').link(() => AppUserBuildingController(managedContext))
+    
+    ..route('building-type-input').link(() => AppBuildingTypeInputController(managedContext))
+    ..route('building-type-input/by-building/:idBuilding').link(() => AppBuildingTypeInputController(managedContext))
+    ..route('building-type-input/by-resource/:idResource').link(() => AppBuildingTypeInputController(managedContext))
+
+    ..route('building-type-output').link(() => AppBuildingTypeOutputController(managedContext))
+    ..route('building-type-output/by-building/:idBuilding').link(() => AppBuildingTypeOutputController(managedContext))
+    ..route('building-type-output/by-resource/:idResource').link(() => AppBuildingTypeOutputController(managedContext))
+    ;
 
   PostgreSQLPersistentStore _initDatabase() {
     return PostgreSQLPersistentStore(
