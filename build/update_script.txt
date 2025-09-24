@@ -1,0 +1,53 @@
+<!-- Проверка версии приложения -->
+  <script>
+    async function checkVersion() {
+      try {
+        const url = `version.json?ts=${Date.now()}`; // обходим кеш SW/браузера
+        const res = await fetch(url, { cache: 'no-store' });
+        const remote = await res.json();
+        const local = localStorage.getItem('version');
+
+        if (local && local !== remote.version) {
+          // На мобильных confirm нередко «глотается». Покажем баннер.
+          showUpdateBanner();
+        }
+        localStorage.setItem('version', remote.version);
+      } catch (e) { console.error('Version check failed', e); }
+    }
+
+    function showUpdateBanner() {
+      const bar = document.createElement('div');
+      bar.style.cssText =
+        'position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:#1e293b;color:#fff;display:flex;gap:12px;align-items:center;z-index:9999;';
+      bar.innerHTML =
+        '<span>Доступно обновление приложения.</span>' +
+        '<button id="updBtn" style="margin-left:auto;padding:8px 12px;border:0;border-radius:8px;background:#22c55e;color:#000;font-weight:600;">Обновить</button>';
+      document.body.appendChild(bar);
+      document.getElementById('updBtn').onclick = () => location.reload(true);
+    }
+
+    checkVersion();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      // когда активируется новый SW — сразу перезагружаем вкладку
+      navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (!reg) return;
+        reg.update(); // просим сразу проверить обновления
+
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            // старая вкладка под контролем старого SW? просим нового занять место
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              try { sw.postMessage({ type: 'SKIP_WAITING' }); } catch (_) {}
+            }
+          });
+        });
+      });
+    }
+  </script>
