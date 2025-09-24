@@ -1,4 +1,5 @@
 import 'package:conduit_core/conduit_core.dart';
+import 'package:data/models/user_building_model.dart';
 
 class BuildingTypeModel extends ManagedObject<_BuildingTypeModel>
     implements _BuildingTypeModel {}
@@ -27,4 +28,6 @@ class _BuildingTypeModel {
 
   @Column(nullable: true)
   String? imagePath;
+
+  ManagedSet<UserBuildingModel>? userBuildings; // кто использует (UserBuildingModel)
 }

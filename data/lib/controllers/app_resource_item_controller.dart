@@ -11,7 +11,7 @@ class AppResourceItemController extends ResourceController {
   Future<Response> getAll() async {
     try {
       final list = await (Query<ResourceItemModel>(managedContext)
-            ..sortBy((r) => r.idResourceItem, QuerySortOrder.ascending))
+            ..sortBy((r) => r.idResource, QuerySortOrder.ascending))
           .fetch();
       return list.isEmpty ? Response.notFound() : Response.ok(list);
     } catch (e) {
@@ -24,7 +24,7 @@ class AppResourceItemController extends ResourceController {
   Future<Response> getById(@Bind.path('idItem') int id) async {
     try {
       final item = await (Query<ResourceItemModel>(managedContext)
-            ..where((r) => r.idResourceItem).equalTo(id))
+            ..where((r) => r.idResource).equalTo(id))
           .fetchOne();
       return item == null ? Response.notFound() : Response.ok(item);
     } catch (e) {

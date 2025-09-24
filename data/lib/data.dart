@@ -2,7 +2,9 @@ import 'package:conduit_core/conduit_core.dart';
 import 'package:conduit_postgresql/conduit_postgresql.dart';
 import 'package:data/controllers/app_building_type_controller.dart';
 import 'package:data/controllers/app_resource_item_controller.dart';
+import 'package:data/controllers/app_user_building_controller.dart';
 import 'package:data/controllers/app_user_controller.dart';
+import 'package:data/controllers/app_user_resource_controller.dart';
 import 'package:data/utils/app_env.dart';
 
 class AppService extends ApplicationChannel {
@@ -22,8 +24,18 @@ class AppService extends ApplicationChannel {
     ..route('user/register').link(() => AppUserController(managedContext))
     ..route('user/login').link(() => AppUserController(managedContext))
     ..route('user/[:idUser]').link(() => AppUserController(managedContext))
+
     ..route('building-type/[:idBuilding]').link(() => AppBuildingTypeController(managedContext))
-    ..route('resource-item/[:idItem]').link(() => AppResourceItemController(managedContext));
+    
+    ..route('resource-item/[:idItem]').link(() => AppResourceItemController(managedContext))
+
+    ..route('user-resource').link(() => AppUserResourceController(managedContext))
+    ..route('user-resource/by-user/:idUser').link(() => AppUserResourceController(managedContext))
+    ..route('user-resource/:idUserResource').link(() => AppUserResourceController(managedContext))
+
+    ..route('user-building').link(() => AppUserBuildingController(managedContext))
+    ..route('user-building/by-user/:idUser').link(() => AppUserBuildingController(managedContext))
+    ..route('user-building/:idUserBuilding').link(() => AppUserBuildingController(managedContext));
 
   PostgreSQLPersistentStore _initDatabase() {
     return PostgreSQLPersistentStore(

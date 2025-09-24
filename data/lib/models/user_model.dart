@@ -1,4 +1,6 @@
 import 'package:conduit_core/conduit_core.dart';
+import 'package:data/models/user_building_model.dart';
+import 'package:data/models/user_resource_model.dart';
 
 class UserModel extends ManagedObject<_UserModel> implements _UserModel {
   // виртуальное поле: прилетает в запросе, в ответ не уходит
@@ -28,4 +30,7 @@ class _UserModel {
   // храним только хеш пароля
   @Column(omitByDefault: true) 
   String? passwordHash;
+
+  ManagedSet<UserResourceModel>? resources; // склад пользователя
+  ManagedSet<UserBuildingModel>? buildings; // постройки
 }
