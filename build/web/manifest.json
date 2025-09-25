@@ -1,6 +1,6 @@
 {
-    "name": "museum_site",
-    "short_name": "museum_site",
+    "name": "hackathon_economy_app",
+    "short_name": "hackathon_economy_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

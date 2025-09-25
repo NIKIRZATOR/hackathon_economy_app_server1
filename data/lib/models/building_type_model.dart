@@ -23,6 +23,9 @@ class _BuildingTypeModel {
   int? wSize;
 
   @Column(nullable: false)
+  int? cost;
+
+  @Column(nullable: false)
   int? unlockLevel;
 
   @Column(nullable: false)

@@ -1,0 +1,17 @@
+[
+  {
+    "id_user": 1,
+    "id_resource": 1,
+    "amount": 1200
+  },
+  {
+    "id_user": 1,
+    "id_resource": 3,
+    "amount": 50
+  },
+  {
+    "id_user": 1,
+    "id_resource": 5,
+    "amount": 35
+  }
+]
