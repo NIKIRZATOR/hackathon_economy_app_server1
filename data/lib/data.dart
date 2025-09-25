@@ -5,8 +5,10 @@ import 'package:data/controllers/app_building_type_input_controller.dart';
 import 'package:data/controllers/app_building_type_output_controller.dart';
 import 'package:data/controllers/app_resource_item_controller.dart';
 import 'package:data/controllers/app_user_building_controller.dart';
-import 'package:data/controllers/app_user_controller.dart';
+import 'package:data/controllers/user_controllers/app_user_controller.dart';
 import 'package:data/controllers/app_user_resource_controller.dart';
+import 'package:data/controllers/user_controllers/app_user_login_controller.dart';
+import 'package:data/controllers/user_controllers/app_user_register_controller.dart';
 import 'package:data/utils/app_env.dart';
 
 class AppService extends ApplicationChannel {
@@ -23,8 +25,8 @@ class AppService extends ApplicationChannel {
   @override
   Controller get entryPoint => Router()
     
-    ..route('user/register').link(() => AppUserController(managedContext))
-    ..route('user/login').link(() => AppUserController(managedContext))
+    ..route('user/register').link(() => AppUserRegisterController(managedContext))
+    ..route('user/login').link(() => AppUserLoginController(managedContext))
     ..route('user/[:idUser]').link(() => AppUserController(managedContext))
 
     ..route('building-type/[:idBuilding]').link(() => AppBuildingTypeController(managedContext))
