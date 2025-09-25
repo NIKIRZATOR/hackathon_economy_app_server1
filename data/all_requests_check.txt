@@ -7,6 +7,12 @@ User
 curl -X POST http://localhost/data/user/register \
   -d '{ "username":"test1", "password":"qwerty", "cityTitle":"Город Капитала" }'
 
+  { 
+    "username":"test1",
+    "password":"qwerty", 
+    "cityTitle":"Кодерский город" 
+}
+
 
 Логин
 
