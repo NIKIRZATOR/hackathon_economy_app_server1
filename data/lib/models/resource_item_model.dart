@@ -13,6 +13,9 @@ class _ResourceItemModel {
   @Column(nullable: false)
   String? title;
 
+  @Column(nullable: false)
+  double? resourceCost;
+
   @Column(unique: true, indexed: true)
   String? code;
 

@@ -17,6 +17,6 @@ class _UserResourceModel {
   @Relate(#usages, isRequired: true, onDelete: DeleteRule.cascade)
   ResourceItemModel? resource;
 
-  @Column(nullable: false, defaultValue: '0')
-  int? amount;
+  @Column(nullable: false)
+  double? amount;
 }
