@@ -25,6 +25,9 @@ class _ResourceItemModel {
   @Column(nullable: false, defaultValue: 'true')
   bool? isStorable;
 
+  @Column(nullable: true)
+  String? imagePath;
+
   ManagedSet<UserResourceModel>? usages; // где используется (UserResourceModel)
 
   ManagedSet<BuildingTypeInputModel>? asInput;

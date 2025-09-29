@@ -56,21 +56,29 @@ class AppUserResourceController extends ResourceController {
     }
   }
 
-  // PUT /user-resource/:idUserResource
-  @Operation.put('idUserResource')
-  Future<Response> update(
-    @Bind.path('idUserResource') int id,
-    @Bind.body() UserResourceModel body,
-  ) async {
+  // PUT /user-resource   (обновление по userId + resourceId)
+  @Operation.put()
+  Future<Response> updateByPair(@Bind.body() UserResourceModel body) async {
+    final uid = body.user?.userId;
+    final rid = body.resource?.idResource;
+    if (uid == null || rid == null) {
+      return AppResponse.badRequest(message: 'Нужны user.userId и resource.idResource');
+    }
     try {
-      final exists = await managedContext.fetchObjectWithID<UserResourceModel>(id);
-      if (exists == null) return AppResponse.badRequest(message: 'Не найдено');
+      final exists = await (Query<UserResourceModel>(managedContext)
+            ..where((r) => r.user!.userId).equalTo(uid)
+            ..where((r) => r.resource!.idResource).equalTo(rid))
+          .fetchOne();
 
-      final q = Query<UserResourceModel>(managedContext)
-        ..where((r) => r.idUserResource).equalTo(id)
-        ..values.amount = body.amount ?? exists.amount;
+      if (exists == null) {
+        return AppResponse.badRequest(message: 'Запись user_resource не найдена');
+      }
 
-      final updated = await q.updateOne();
+      final updated = await (Query<UserResourceModel>(managedContext)
+            ..where((r) => r.idUserResource).equalTo(exists.idUserResource)
+            ..values.amount = body.amount ?? exists.amount)
+          .updateOne();
+
       return updated == null
           ? AppResponse.serverError(null, message: 'Не удалось обновить')
           : AppResponse.ok(message: 'Обновлено');
