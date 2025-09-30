@@ -21,13 +21,13 @@ class _BuildingTypeOutputModel {
   String? produceMode; // per_sec | per_cycle
 
   @Column(nullable: true)
-  int? producePerSec;
+  double? producePerSec;
 
   @Column(nullable: true)
   int? cycleDuration;
 
   @Column(nullable: true)
-  int? amountPerCycle;
+  double? amountPerCycle;
 
   @Column( nullable: true)
   int? bufferForResource;

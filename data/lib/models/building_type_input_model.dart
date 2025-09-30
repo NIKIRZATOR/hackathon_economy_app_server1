@@ -18,8 +18,8 @@ class _BuildingTypeInputModel {
   ResourceItemModel? resource;
 
   @Column(nullable: false)
-  int? consumePerSec;
+  double? consumePerSec;
 
   @Column(nullable: false)
-  int? amountPerSec;
+  double? amountPerSec;
 }
