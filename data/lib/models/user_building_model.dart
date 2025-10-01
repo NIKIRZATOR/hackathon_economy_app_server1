@@ -1,4 +1,5 @@
 import 'package:conduit_core/conduit_core.dart';
+import 'package:data/models/user_building_progress_model.dart';
 import 'package:data/models/user_model.dart';
 import 'package:data/models/building_type_model.dart';
 
@@ -29,4 +30,6 @@ class _UserBuildingModel {
 
   @Column(nullable: true) DateTime? placedAt;
   @Column(nullable: true) DateTime? lastUpgradeAt;
+
+  ManagedSet<UserBuildingProgressModel>? progresses;
 }

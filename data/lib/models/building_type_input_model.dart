@@ -17,9 +17,21 @@ class _BuildingTypeInputModel {
   @Relate(#asInput, isRequired: true, onDelete: DeleteRule.cascade)
   ResourceItemModel? resource;
 
-  @Column(nullable: false)
+  @Column(nullable: true)
+  String? consumeMode; //per_sec | per_cycle
+
+  @Column(nullable: true) // сколько единиц входного ресурса тратится за один цикл
+  double? consumePerCycle;
+
+  @Column(nullable: true) // длительность цикла в секундах, если consumemode == per_cycle
+  int? cycleDuration; 
+
+  @Column( nullable: true) // ёмкость входного буфера
+  int? bufferForResource; 
+
+  @Column(nullable: true)
   double? consumePerSec;
 
-  @Column(nullable: false)
+  @Column(nullable: true)
   double? amountPerSec;
 }

@@ -5,6 +5,7 @@ import 'package:data/controllers/app_building_type_input_controller.dart';
 import 'package:data/controllers/app_building_type_output_controller.dart';
 import 'package:data/controllers/app_resource_item_controller.dart';
 import 'package:data/controllers/app_user_building_controller.dart';
+import 'package:data/controllers/app_user_building_progress_controller.dart';
 import 'package:data/controllers/user_controllers/app_user_controller.dart';
 import 'package:data/controllers/app_user_resource_controller.dart';
 import 'package:data/controllers/user_controllers/app_user_login_controller.dart';
@@ -48,6 +49,10 @@ class AppService extends ApplicationChannel {
     ..route('building-type-output').link(() => AppBuildingTypeOutputController(managedContext))
     ..route('building-type-output/by-building/:idBuilding').link(() => AppBuildingTypeOutputController(managedContext))
     ..route('building-type-output/by-resource/:idResource').link(() => AppBuildingTypeOutputController(managedContext))
+    
+    ..route('user-building-progress/:idProgress').link(() => AppUserBuildingProgressController(managedContext)) // GET/DELETE по id (если добавишь)
+    ..route('user-building-progress/by-user/:idUser').link(() => AppUserBuildingProgressController(managedContext)) // GET список по пользователю
+    ..route('user-building-progress/:action').link(() => AppUserBuildingProgressController(managedContext))
     ;
 
   PostgreSQLPersistentStore _initDatabase() {
