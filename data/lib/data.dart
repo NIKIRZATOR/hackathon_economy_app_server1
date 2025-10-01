@@ -50,10 +50,10 @@ class AppService extends ApplicationChannel {
     ..route('building-type-output/by-building/:idBuilding').link(() => AppBuildingTypeOutputController(managedContext))
     ..route('building-type-output/by-resource/:idResource').link(() => AppBuildingTypeOutputController(managedContext))
     
-    ..route('user-building-progress/:idProgress').link(() => AppUserBuildingProgressController(managedContext)) // GET/DELETE по id (если добавишь)
-    ..route('user-building-progress/by-user/:idUser').link(() => AppUserBuildingProgressController(managedContext)) // GET список по пользователю
-    ..route('user-building-progress/:action').link(() => AppUserBuildingProgressController(managedContext))
-    ;
+   ..route('user-building-progress').link(() => AppUserBuildingProgressController(managedContext))
+    ..route('user-building-progress/by-user/:idUser').link(() => AppUserBuildingProgressController(managedContext))
+    ..route('user-building-progress/:idProgress').link(() => AppUserBuildingProgressController(managedContext))
+;
 
   PostgreSQLPersistentStore _initDatabase() {
     return PostgreSQLPersistentStore(

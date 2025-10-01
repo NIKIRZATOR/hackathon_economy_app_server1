@@ -1,116 +1,154 @@
 import 'package:conduit_core/conduit_core.dart';
-import 'package:data/models/resource_item_model.dart';
 import 'package:data/models/user_building_model.dart';
+import 'package:data/models/resource_item_model.dart';
 import 'package:data/models/user_building_progress_model.dart';
 import 'package:data/utils/app_response.dart';
 
 class AppUserBuildingProgressController extends ResourceController {
-  AppUserBuildingProgressController(this.ctx);
-  final ManagedContext ctx;
+  AppUserBuildingProgressController(this.managedContext);
+  final ManagedContext managedContext;
 
-  @Operation.post('action')
-  Future<Response> postAction(
-    @Bind.path('action') String action, 
-    @Bind.body() Map<String, dynamic> body) async {
-    switch (action) {
-      case 'start': return _start(body);
-      case 'sync':  return _syncList(body);
-      case 'collect': return _collect(body);
-      default: return AppResponse.badRequest(message: 'unknown action');
+  // GET /user-building-progress
+  @Operation.get()
+  Future<Response> getAll() async {
+    try {
+      final list = await (Query<UserBuildingProgressModel>(managedContext)
+            ..join(object: (p) => p.userBuilding)
+            ..join(object: (p) => p.resourceIn)
+            ..join(object: (p) => p.resourceOut)
+            ..sortBy((p) => p.idProgress, QuerySortOrder.ascending))
+          .fetch();
+      return list.isEmpty ? Response.notFound() : Response.ok(list);
+    } catch (e) {
+      return AppResponse.serverError(e, message: 'Ошибка получения user_building_progress');
     }
   }
 
-  Future<Response> _start(Map<String, dynamic> b) async {
-    final ubId = b['userBuilding']?['idUserBuilding'] as int?;
-    final rin  = b['resourceIn']?['idResource'] as int?;
-    final rout = b['resourceOut']?['idResource'] as int?;
-    final total = b['totalToProcess'] as int?;
-    final dur   = b['cycleDurationSec'] as int?;
-    final inPer = (b['inPerCycle'] as num?)?.toDouble();
-    final outPer= (b['outPerCycle'] as num?)?.toDouble();
-    final startedAtClient = DateTime.parse(b['startedAtClient'] as String);
-
-    // TODO: проверить ресурсы пользователя, вместимость и т.д., списать входной ресурс
-
-    final created = await (Query<UserBuildingProgressModel>(ctx)
-          ..values.userBuilding = (UserBuildingModel()..idUserBuilding = ubId)
-          ..values.resourceIn   = (ResourceItemModel()..idResource = rin)
-          ..values.resourceOut  = (ResourceItemModel()..idResource = rout)
-          ..values.totalToProcess = total
-          ..values.cycleDurationSec = dur
-          ..values.inPerCycle = inPer
-          ..values.outPerCycle = outPer
-          ..values.processedCount = 0
-          ..values.readyOut = 0
-          ..values.startedAtClient = startedAtClient.toUtc()
-          ..values.startedAtServer = DateTime.now().toUtc()
-          ..values.state = 'running')
-        .insert();
-
-    return Response.ok(created);
-  }
-
-  Future<Response> _syncList(dynamic body) async {
-    if (body is! List) return AppResponse.badRequest(message: 'array required');
-    final now = DateTime.now().toUtc();
-    final updated = <UserBuildingProgressModel>[];
-
-    for (final raw in body.cast<Map<String, dynamic>>()) {
-      final id = raw['idProgress'] as int;
-      final snapProcessed = (raw['processedCount'] as int?) ?? 0;
-
-      final p = await (Query<UserBuildingProgressModel>(ctx)
-            ..where((x) => x.idProgress).equalTo(id))
-          .fetchOne();
-      if (p == null) continue;
-
-      final maxPossible = ((now.difference(p.startedAtServer!).inSeconds) / p.cycleDurationSec!).floor();
-      final clampedProcessed = snapProcessed.clamp(0, p.totalToProcess!).clamp(0, maxPossible);
-
-      p.processedCount = clampedProcessed;
-      p.readyOut = clampedProcessed * p.outPerCycle!;
-      p.state = (clampedProcessed >= p.totalToProcess!) ? 'ready' : 'running';
-      p.updatedAt = now;
-
-      final saved = await (Query<UserBuildingProgressModel>(ctx)
-            ..where((x) => x.idProgress).equalTo(id)
-            ..values = p)
-          .updateOne();
-
-      if (saved != null) updated.add(saved);
-    }
-    return Response.ok(updated);
-  }
-
-  Future<Response> _collect(Map<String, dynamic> b) async {
-    final id = b['idProgress'] as int?;
-    if (id == null) return AppResponse.badRequest(message: 'idProgress required');
-
-    final p = await (Query<UserBuildingProgressModel>(ctx)
-          ..where((x) => x.idProgress).equalTo(id))
-        .fetchOne();
-    if (p == null) return AppResponse.badRequest(message: 'not found');
-
-    final amount = p.readyOut ?? 0;
-    if (amount > 0) {
-      // начислить игроку ресурсOut (user_resource upsert + amount)
-      // ...
-      p.readyOut = 0;
-      p.state = (p.processedCount! >= p.totalToProcess!) ? 'collected' : 'running';
-      await (Query<UserBuildingProgressModel>(ctx)
-            ..where((x) => x.idProgress).equalTo(id)
-            ..values.readyOut = 0
-            ..values.state = p.state)
-          .updateOne();
-    }
-    return Response.ok({'collected': amount});
-  }
-
+  // GET /user-building-progress/by-user/:idUser
   @Operation.get('idUser')
-  Future<Response> listByUser(@Bind.path('idUser') int idUser) async {
-    final items = await (Query<UserBuildingProgressModel>(ctx)
-          ..join(object: (x) => x.userBuilding!).where((ub) => ub.user!.userId).equalTo(idUser))
-        .fetch();
-    return Response.ok(items);
+  Future<Response> getByUser(
+    @Bind.path('idUser') int idUser) async {
+    try {
+      final list = await (Query<UserBuildingProgressModel>(managedContext)
+            ..join(object: (p) => p.userBuilding)
+                .where((ub) => ub.user!.userId).equalTo(idUser)
+            ..join(object: (p) => p.resourceIn)
+            ..join(object: (p) => p.resourceOut)
+            ..sortBy((p) => p.idProgress, QuerySortOrder.ascending))
+          .fetch();
+      return list.isEmpty ? Response.notFound() : Response.ok(list);
+    } catch (e) {
+      return AppResponse.serverError(e, message: 'Ошибка получения прогрессов по пользователю');
+    }
+  }
+
+  // GET /user-building-progress/:idProgress
+  @Operation.get('idProgress')
+  Future<Response> getOne(
+    @Bind.path('idProgress') int idProgress) async {
+    try {
+      final item = await (Query<UserBuildingProgressModel>(managedContext)
+            ..where((p) => p.idProgress).equalTo(idProgress)
+            ..join(object: (p) => p.userBuilding)
+            ..join(object: (p) => p.resourceIn)
+            ..join(object: (p) => p.resourceOut))
+          .fetchOne();
+      return item == null ? Response.notFound() : Response.ok(item);
+    } catch (e) {
+      return AppResponse.serverError(e, message: 'Ошибка получения прогресса');
+    }
+  }
+
+  // POST /user-building-progress
+  @Operation.post()
+  Future<Response> create(@Bind.body() UserBuildingProgressModel body) async {
+    final ubId   = body.userBuilding?.idUserBuilding;
+    final rinId  = body.resourceIn?.idResource;
+    final routId = body.resourceOut?.idResource;
+    final dur    = body.cycleDurationSec;
+    final inPer  = body.inPerCycle;
+    final outPer = body.outPerCycle;
+    final total  = body.totalToProcess;
+    final startedAtClient = body.startedAtClient;
+
+    if ([ubId, rinId, routId, 
+      dur, inPer, outPer, total, 
+      startedAtClient].contains(null)) {
+        return AppResponse.badRequest(
+          message: 'Нужны: userBuilding.idUserBuilding, resourceIn.idResource, resourceOut.idResource, '
+                  'cycleDurationSec, inPerCycle, outPerCycle, totalToProcess, startedAtClient');
+    }
+
+    try {
+      final created = await (Query<UserBuildingProgressModel>(managedContext)
+            ..values.userBuilding = (UserBuildingModel()..idUserBuilding = ubId)
+            ..values.resourceIn   = (ResourceItemModel()..idResource = rinId)
+            ..values.resourceOut  = (ResourceItemModel()..idResource = routId)
+            ..values.cycleDurationSec = dur
+            ..values.inPerCycle   = inPer
+            ..values.outPerCycle  = outPer
+            ..values.totalToProcess = total
+            ..values.processedCount = body.processedCount ?? 0
+            ..values.readyOut       = body.readyOut ?? 0
+            ..values.startedAtClient = startedAtClient!.toUtc()
+            ..values.startedAtServer = DateTime.now().toUtc()
+            ..values.updatedAt       = DateTime.now().toUtc()
+            ..values.state = body.state ?? 'running')
+          .insert();
+
+      return Response.ok(created);
+    } catch (e) {
+      return AppResponse.serverError(e, message: 'Ошибка добавления user_building_progress');
+    }
+  }
+
+  // PUT /user-building-progress/:idProgress
+  // обновляем только статус прогресса: processedCount, readyOut, state, updatedAt
+  @Operation.put('idProgress')
+  Future<Response> update(
+    @Bind.path('idProgress') int idProgress,
+    @Bind.body() UserBuildingProgressModel body,
+  ) async {
+    try {
+      final exists = await managedContext.fetchObjectWithID<UserBuildingProgressModel>(idProgress);
+      if (exists == null) return AppResponse.badRequest(message: 'Не найдено');
+
+      int? processed = body.processedCount ?? exists.processedCount;
+      if (processed != null && exists.totalToProcess != null) {
+        final now = DateTime.now().toUtc();
+        final maxByTime = ((now.difference(exists.startedAtServer!).inSeconds) / exists.cycleDurationSec!).floor();
+        processed = processed.clamp(0, exists.totalToProcess!).clamp(0, maxByTime);
+      }
+
+      final updated = await (Query<UserBuildingProgressModel>(managedContext)
+            ..where((p) => p.idProgress).equalTo(idProgress)
+            ..values.processedCount = processed
+            ..values.readyOut = body.readyOut ??
+                (processed != null && exists.outPerCycle != null
+                    ? processed * exists.outPerCycle!
+                    : exists.readyOut)
+            ..values.state = body.state ?? exists.state
+            ..values.updatedAt = DateTime.now().toUtc())
+          .updateOne();
+
+      return updated == null
+          ? AppResponse.serverError(null, message: 'Не удалось обновить')
+          : AppResponse.ok(message: 'Обновлено');
+    } catch (e) {
+      return AppResponse.serverError(e, message: 'Ошибка обновления user_building_progress');
+    }
+  }
+
+  // DELETE /user-building-progress/:idProgress
+  @Operation.delete('idProgress')
+  Future<Response> delete(@Bind.path('idProgress') int idProgress) async {
+    try {
+      final n = await (Query<UserBuildingProgressModel>(managedContext)
+            ..where((p) => p.idProgress).equalTo(idProgress))
+          .delete();
+      return n == 0 ? AppResponse.badRequest(message: 'Не найдено') : AppResponse.ok(message: 'Удалено');
+    } catch (e) {
+      return AppResponse.serverError(e, message: 'Ошибка удаления user_building_progress');
+    }
   }
 }
