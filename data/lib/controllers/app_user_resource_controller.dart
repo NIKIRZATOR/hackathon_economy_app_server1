@@ -56,34 +56,51 @@ class AppUserResourceController extends ResourceController {
     }
   }
 
-  // PUT /user-resource   (обновление по userId + resourceId)
   @Operation.put()
-  Future<Response> updateByPair(@Bind.body() UserResourceModel body) async {
-    final uid = body.user?.userId;
-    final rid = body.resource?.idResource;
-    if (uid == null || rid == null) {
-      return AppResponse.badRequest(message: 'Нужны user.userId и resource.idResource');
-    }
+  Future<Response> upsertByPair(@Bind.body() Map<String, dynamic> body) async {
     try {
-      final exists = await (Query<UserResourceModel>(managedContext)
-            ..where((r) => r.user!.userId).equalTo(uid)
-            ..where((r) => r.resource!.idResource).equalTo(rid))
+      final userId = body['user']?['userId'] as int?;
+      final resId  = body['resource']?['idResource'] as int?;
+      final amountRaw = body['amount'];
+      if (userId == null || resId == null || amountRaw == null) {
+        return AppResponse.badRequest(message: 'Нужны user.userId, resource.idResource, amount');
+      }
+      final amount = (amountRaw is int) ? amountRaw.toDouble() : (amountRaw as num).toDouble();
+
+      // ищем по (user, resource)
+      final existed = await (Query<UserResourceModel>(managedContext)
+            ..where((ur) => ur.user!.userId).equalTo(userId)
+            ..where((ur) => ur.resource!.idResource).equalTo(resId))
           .fetchOne();
 
-      if (exists == null) {
-        return AppResponse.badRequest(message: 'Запись user_resource не найдена');
+      if (existed != null) {
+        final q = Query<UserResourceModel>(managedContext)
+          ..where((ur) => ur.idUserResource).equalTo(existed.idUserResource!)
+          ..values.amount = amount;
+        final updated = await q.updateOne() ?? existed;
+        return Response.ok({
+          'idUserResource': updated.idUserResource,
+          'userId': updated.user?.userId,
+          'idResource': updated.resource?.idResource,
+          'amount': updated.amount,
+        });
       }
 
-      final updated = await (Query<UserResourceModel>(managedContext)
-            ..where((r) => r.idUserResource).equalTo(exists.idUserResource)
-            ..values.amount = body.amount ?? exists.amount)
-          .updateOne();
+      // нет — создаём
+      final ins = await (Query<UserResourceModel>(managedContext)
+            ..values.user = (UserModel()..userId = userId)
+            ..values.resource = (ResourceItemModel()..idResource = resId)
+            ..values.amount = amount)
+          .insert();
 
-      return updated == null
-          ? AppResponse.serverError(null, message: 'Не удалось обновить')
-          : AppResponse.ok(message: 'Обновлено');
+      return Response.ok({
+        'idUserResource': ins.idUserResource,
+        'userId': ins.user?.userId,
+        'idResource': ins.resource?.idResource,
+        'amount': ins.amount,
+      });
     } catch (e) {
-      return AppResponse.serverError(e, message: 'Ошибка обновления user_resource');
+      return AppResponse.serverError(e, message: 'Ошибка upsert user_resource');
     }
   }
 

@@ -25,55 +25,105 @@ class AppUserBuildingController extends ResourceController {
 
   // GET /user-building/by-user/:idUser
   @Operation.get('idUser')
-  Future<Response> getUserBuildingsByUserId(@Bind.path('idUser') int idUser) async {
+  Future<Response> getUserBuildingsByUserId(
+    @Bind.path('idUser') int idUser) async {
     try {
       final list = await (Query<UserBuildingModel>(managedContext)
             ..where((b) => b.user!.userId).equalTo(idUser)
             ..join(object: (b) => b.buildingType)
             ..sortBy((b) => b.idUserBuilding, QuerySortOrder.ascending))
           .fetch();
-      return list.isEmpty ? Response.notFound() : Response.ok(list);
+
+      final flat = list.map(ubToFlat).toList();
+      return flat.isEmpty ? Response.notFound() : Response.ok(flat);
     } catch (e) {
       return AppResponse.serverError(e, message: 'Ошибка получения построек пользователя');
     }
   }
 
-  // POST /user-building
-  // body: { "user":{"userId":1}, "buildingType":{"idBuilding":3}, "x":10,"y":5,"currentLevel":1,"state":"placed" }
   @Operation.post()
-  Future<Response> create(@Bind.body() UserBuildingModel body) async {
-    if (body.user?.userId == null || body.buildingType?.idBuildingType == null || body.x == null || body.y == null) {
-      return AppResponse.badRequest(message: 'Нужны user.userId, buildingType.idBuilding, x, y');
-    }
+  Future<Response> createOrUpsert(@Bind.body() UserBuildingModel body) async {
     try {
-      final q = Query<UserBuildingModel>(managedContext)
-        ..values.user = (UserModel()..userId = body.user!.userId)
-        ..values.buildingType = (BuildingTypeModel()..idBuildingType = body.buildingType!.idBuildingType)
-        ..values.x = body.x
-        ..values.y = body.y
-        ..values.currentLevel = body.currentLevel ?? 1
-        ..values.state = body.state ?? 'placed'
-        ..values.placedAt = body.placedAt ?? DateTime.now()
-        ..values.lastUpgradeAt = body.lastUpgradeAt;
-      final created = await q.insert();
-      return Response.ok(created);
+      final userId = body.user?.userId;
+      final btId   = body.buildingType?.idBuildingType;
+      final cid    = body.clientId;
+
+      if (userId == null || btId == null || cid == null || cid.isEmpty || body.x == null || body.y == null) {
+        return AppResponse.badRequest(message: 'Нужны user.userId, buildingType.idBuildingType, clientId, x, y');
+      }
+
+      // ищем по (user, clientId)
+      final existed = await (Query<UserBuildingModel>(managedContext)
+            ..where((b) => b.user!.userId).equalTo(userId)
+            ..where((b) => b.clientId).equalTo(cid))
+          .fetchOne();
+
+      if (existed != null) {
+        final q = Query<UserBuildingModel>(managedContext)
+          ..where((b) => b.idUserBuilding).equalTo(existed.idUserBuilding!)
+          ..values
+          ..values.buildingType = (BuildingTypeModel()..idBuildingType = btId)
+          ..values.x = body.x ?? existed.x
+          ..values.y = body.y ?? existed.y
+          ..values.currentLevel = body.currentLevel ?? existed.currentLevel
+          ..values.state = body.state ?? existed.state
+          ..values.placedAt = body.placedAt ?? existed.placedAt
+          ..values.lastUpgradeAt = body.lastUpgradeAt ?? existed.lastUpgradeAt;
+        final updated = await q.updateOne();
+        return Response.ok(ubToFlat(updated ?? existed));
+      }
+
+      final ins = await (Query<UserBuildingModel>(managedContext)
+            ..values.user = (UserModel()..userId = userId)
+            ..values.buildingType = (BuildingTypeModel()..idBuildingType = btId)
+            ..values.clientId = cid
+            ..values.x = body.x
+            ..values.y = body.y
+            ..values.currentLevel = body.currentLevel ?? 1
+            ..values.state = body.state ?? 'placed'
+            ..values.placedAt = body.placedAt ?? DateTime.now().toUtc()
+            ..values.lastUpgradeAt = body.lastUpgradeAt)
+          .insert();
+
+      return Response.ok(ubToFlat(ins));
     } catch (e) {
-      return AppResponse.serverError(e, message: 'Ошибка добавления user_building');
+      return AppResponse.serverError(e, message: 'Ошибка добавления/склейки user_building');
     }
   }
 
+    Map<String, dynamic> ubToFlat(UserBuildingModel m) => {
+    'idUserBuilding': m.idUserBuilding,
+    'idUser': m.user?.userId,
+    'idBuildingType': m.buildingType?.idBuildingType,
+    'x': m.x,
+    'y': m.y,
+    'currentLevel': m.currentLevel,
+    'state': m.state,
+    'placedAt': m.placedAt?.toUtc().toIso8601String(),
+    'lastUpgradeAt': m.lastUpgradeAt?.toUtc().toIso8601String(),
+    'client_id': m.clientId,
+  };
+
   // PUT /user-building/:idUserBuilding
-  @Operation.put('idUserBuilding')
+ @Operation.put('idUserBuilding')
   Future<Response> update(
     @Bind.path('idUserBuilding') int id,
     @Bind.body() UserBuildingModel body,
   ) async {
     try {
-      final exists = await managedContext.fetchObjectWithID<UserBuildingModel>(id);
-      if (exists == null) return AppResponse.badRequest(message: 'Не найдено');
+      // если юзера берёшь из токена — возьми оттуда; тут у тебя приходит в body
+      final userId = body.user?.userId;
+
+      final exists = await (Query<UserBuildingModel>(managedContext)
+            ..where((b) => b.idUserBuilding).equalTo(id)
+            ..where((b) => b.user!.userId).equalTo(userId ?? (await managedContext.fetchObjectWithID<UserBuildingModel>(id))?.user?.userId ?? -1))
+          .fetchOne();
+
+      if (exists == null) return AppResponse.badRequest(message: 'Не найдено или чужая запись');
 
       final q = Query<UserBuildingModel>(managedContext)
         ..where((b) => b.idUserBuilding).equalTo(id)
+        ..values
         ..values.x = body.x ?? exists.x
         ..values.y = body.y ?? exists.y
         ..values.currentLevel = body.currentLevel ?? exists.currentLevel
@@ -82,13 +132,11 @@ class AppUserBuildingController extends ResourceController {
         ..values.lastUpgradeAt = body.lastUpgradeAt ?? exists.lastUpgradeAt;
 
       final updated = await q.updateOne();
-      return updated == null
-          ? AppResponse.serverError(null, message: 'Не удалось обновить')
-          : AppResponse.ok(message: 'Обновлено');
+      return Response.ok(ubToFlat(updated ?? exists));
     } catch (e) {
       return AppResponse.serverError(e, message: 'Ошибка обновления user_building');
     }
-  }
+}
 
   // DELETE /user-building/:idUserBuilding
   @Operation.delete('idUserBuilding')

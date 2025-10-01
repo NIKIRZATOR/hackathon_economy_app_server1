@@ -18,6 +18,9 @@ class _UserBuildingModel {
   @Relate(#userBuildings, isRequired: true, onDelete: DeleteRule.cascade)
   BuildingTypeModel? buildingType;
 
+  @Column(indexed: true)
+  String? clientId;
+
   @Column(nullable: false) int? x;
   @Column(nullable: false) int? y;
 
