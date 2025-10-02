@@ -1,6 +1,7 @@
 import 'package:conduit_core/conduit_core.dart';
 import 'package:data/models/user_building_model.dart';
 import 'package:data/models/user_resource_model.dart';
+import 'package:data/models/user_task_model.dart';
 
 class UserModel extends ManagedObject<_UserModel> implements _UserModel {
   // виртуальное поле: прилетает в запросе, в ответ не уходит
@@ -33,4 +34,5 @@ class _UserModel {
 
   ManagedSet<UserResourceModel>? resources; // склад пользователя
   ManagedSet<UserBuildingModel>? buildings; // постройки
+  ManagedSet<UserTasksDoneModel>? tasksDone; // выполненные задания
 }

@@ -6,6 +6,7 @@ import 'package:data/controllers/app_building_type_output_controller.dart';
 import 'package:data/controllers/app_resource_item_controller.dart';
 import 'package:data/controllers/app_user_building_controller.dart';
 import 'package:data/controllers/app_user_building_progress_controller.dart';
+import 'package:data/controllers/app_user_tasks_done_controller.dart';
 import 'package:data/controllers/user_controllers/app_user_controller.dart';
 import 'package:data/controllers/app_user_resource_controller.dart';
 import 'package:data/controllers/user_controllers/app_user_login_controller.dart';
@@ -53,6 +54,8 @@ class AppService extends ApplicationChannel {
    ..route('user-building-progress').link(() => AppUserBuildingProgressController(managedContext))
     ..route('user-building-progress/by-user/:idUser').link(() => AppUserBuildingProgressController(managedContext))
     ..route('user-building-progress/:idProgress').link(() => AppUserBuildingProgressController(managedContext))
+
+    ..route('user-tasks-done/:idUser').link(() => AppUserTasksDoneController(managedContext))
 ;
 
   PostgreSQLPersistentStore _initDatabase() {
